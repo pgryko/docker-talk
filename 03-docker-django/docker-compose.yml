@@ -1,0 +1,37 @@
+version: '3.7'
+
+services:
+  database:
+    build:
+      context: .
+      dockerfile: postgres.docker
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - private-network
+  web:
+    build:
+      context: .
+      dockerfile: django.docker
+      # All these environmental settings can be ovewritten by creating a .env in the project root dir
+    environment:
+      - DB_NAME=djangodb
+      - DB_USER=djangodb
+      - DB_HOST=database
+      - SECRET_KEY=DoNotUseInProductionYouWillGetHacked
+      - DEBUG=True
+    command: sh -c "wait-for-it database:5432 -- python manage.py migrate && python manage.py runserver 0:5000"
+    ports:
+     - "5000:5000"
+    volumes:
+      - ./examplesite:/app
+    networks:
+      - private-network
+    depends_on:
+      - database
+
+volumes:
+  pgdata:
+
+networks:
+  private-network:
